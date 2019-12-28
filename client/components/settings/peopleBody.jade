@@ -3,8 +3,13 @@ template(name="people")
     unless currentUser.isAdmin
       | {{_ 'error-notAuthorized'}}
     else
-      .content-title
-        span {{_ 'people'}}
+      .content-title.ext-box
+        .ext-box-left
+          span {{_ 'people'}}
+          input#searchInput(placeholder="{{_ 'search'}}")
+          button#searchButton {{_ 'search'}}
+        .ext-box-right
+          span {{_ 'people-number'}} #{peopleNumber}
       .content-body
         .side-menu
           ul
@@ -27,31 +32,62 @@ template(name="peopleGeneral")
         th {{_ 'verified'}}
         th {{_ 'createdAt'}}
         th {{_ 'active'}}
+        th {{_ 'authentication-method'}}
         th
       each user in peopleList
         +peopleRow(userId=user._id)
 
 template(name="peopleRow")
   tr
-    td.username {{ userData.username }}
-    td {{ userData.profile.fullname }}
-    td
-      if userData.isAdmin
-        | {{_ 'yes'}}
-      else
-        | {{_ 'no'}}
-    td {{ userData.emails.[0].address }}
-    td
-      if userData.emails.[0].verified
-        | {{_ 'yes'}}
-      else
-        | {{_ 'no'}}
-    td {{ moment userData.createdAt 'LLL' }}
+    if userData.loginDisabled
+      td.username <s>{{ userData.username }}</s>
+    else
+      td.username {{ userData.username }}
+    if userData.loginDisabled
+      td <s>{{ userData.profile.fullname }}</s>
+    else
+      td {{ userData.profile.fullname }}
+    if userData.loginDisabled
+      td
+        if userData.isAdmin
+          | <s>{{_ 'yes'}}</s>
+        else
+          | <s>{{_ 'no'}}</s>
+    else
+      td
+        if userData.isAdmin
+          | {{_ 'yes'}}
+        else
+          | {{_ 'no'}}
+    if userData.loginDisabled
+      td <s>{{ userData.emails.[0].address }}</s>
+    else
+      td {{ userData.emails.[0].address }}
+    if userData.loginDisabled
+      td
+        if userData.emails.[0].verified
+          | <s>{{_ 'yes'}}</s>
+        else
+          | <s>{{_ 'no'}}</s>
+    else
+      td
+        if userData.emails.[0].verified
+          | {{_ 'yes'}}
+        else
+          | {{_ 'no'}}
+    if userData.loginDisabled
+      td <s>{{ moment userData.createdAt 'LLL' }}</s>
+    else
+      td {{ moment userData.createdAt 'LLL' }}
     td
       if userData.loginDisabled
         | {{_ 'no'}}
       else
         | {{_ 'yes'}}
+    if userData.loginDisabled
+      td <s>{{_ userData.authenticationMethod }}</s>
+    else
+      td {{_ userData.authenticationMethod }}
     td
       a.edit-user
         | {{_ 'edit'}}
@@ -66,12 +102,18 @@ template(name="editUserPopup")
       | {{_ 'username'}}
       span.error.hide.username-taken
         | {{_ 'error-username-taken'}}
-      input.js-profile-username(type="text" value=user.username)
+      if isLdap
+        input.js-profile-username(type="text" value=user.username readonly)
+      else
+        input.js-profile-username(type="text" value=user.username)
     label
       | {{_ 'email'}}
       span.error.hide.email-taken
         | {{_ 'error-email-taken'}}
-      input.js-profile-email(type="email" value="{{user.emails.[0].address}}")
+      if isLdap
+        input.js-profile-email(type="email" value="{{user.emails.[0].address}}" readonly)
+      else
+        input.js-profile-email(type="email" value="{{user.emails.[0].address}}")
     label
       | {{_ 'admin'}}
       select.select-role.js-profile-isadmin
@@ -82,9 +124,20 @@ template(name="editUserPopup")
       select.select-active.js-profile-isactive
         option(value="false") {{_ 'yes'}}
         option(value="true" selected="{{user.loginDisabled}}") {{_ 'no'}}
+    label
+      | {{_ 'authentication-type'}}
+      select.select-authenticationMethod.js-authenticationMethod
+        each authentications
+          if isSelected value
+            option(value="{{value}}" selected) {{_ value}}
+          else
+            option(value="{{value}}") {{_ value}}
     hr
     label
       | {{_ 'password'}}
       input.js-profile-password(type="password")
+    div.buttonsContainer
+      input.primary.wide(type="submit" value="{{_ 'save'}}")
+    //  div
+    //  input#deleteButton.primary.wide(type="button" value="{{_ 'delete'}}")
 
-    input.primary.wide(type="submit" value="{{_ 'save'}}")

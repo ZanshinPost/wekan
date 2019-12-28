@@ -3,7 +3,7 @@ Meteor.publish('user-miniprofile', function(userId) {
 
   return Users.find(userId, {
     fields: {
-      'username': 1,
+      username: 1,
       'profile.fullname': 1,
       'profile.avatarUrl': 1,
     },
@@ -16,4 +16,16 @@ Meteor.publish('user-admin', function() {
       isAdmin: 1,
     },
   });
+});
+
+Meteor.publish('user-authenticationMethod', function(match) {
+  check(match, String);
+  return Users.find(
+    { $or: [{ _id: match }, { email: match }, { username: match }] },
+    {
+      fields: {
+        authenticationMethod: 1,
+      },
+    },
+  );
 });
